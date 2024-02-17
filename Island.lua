@@ -6,6 +6,8 @@ local MaxIslandSpeed = 20
 
 local DRAW_DEBUG = false
 
+local Resource = assert(require("Resource"))
+
 class.Shapes = {
     StartingIsland = {
         graphics = {
@@ -143,6 +145,16 @@ function class.new(x, y, world, start)
         state.body:setAngularVelocity((love.math.random() - 0.5) * math.pi)
     end
 
+    -- Add some resources
+    if love.math.random() > 0.6 and not start then
+        local type = love.math.random(#Resource.Types)
+        local tile = state.shape.graphics[love.math.random(#state.shape.graphics)]
+        local count = love.math.random(10)
+        state.resource = Resource.new(type, count, 0, tile)
+    else
+        state.resource = nil
+    end
+
     state.delete = function(self)
         self.body:destroy()
     end
@@ -177,6 +189,11 @@ function class.new(x, y, world, start)
         love.graphics.setColor(0, 0.7, 0)
         for _, tile_pos in pairs(self.shape.graphics) do
             love.graphics.rectangle("fill", tile_size * tile_pos.x, tile_size * tile_pos.y, tile_size, tile_size)
+        end
+
+        -- Draw the resources that we have
+        if self.resource ~= nil then
+            self.resource:draw(tile_size)
         end
         love.graphics.pop()
     end
