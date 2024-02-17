@@ -52,7 +52,7 @@ local function try_hit(world, pos)
 end
 
 local function is_bridge_allowed(self, hit, stop_w)
-	local valid_target = hit ~= nil and hit ~= self.bridge_island
+	local valid_target = hit ~= nil and hit ~= self.bridge_island and not hit:is_locked()
 	local delta = { x = stop_w.x - self.bridge_start.x, y = stop_w.y - self.bridge_start.y }
 	local size_ok = vec_len2(delta) < MaxBridgeLength * MaxBridgeLength
 	return valid_target and size_ok
