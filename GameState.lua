@@ -118,8 +118,19 @@ function class.new()
 		update_camera(self.camera, dt)
 		self.world:update(dt)
 		-- Update all physics
-		for _, island in pairs(self.islands) do
+		local to_clear = {}
+		for key, island in pairs(self.islands) do
 			island:update(dt)
+			if island.position.x < -300 then
+				table.insert(to_clear, key)
+			end
+		end
+
+		-- Cleanup islands
+		for _, key in pairs(to_clear) do
+			local island = self.islands[key]
+			island:delete()
+			self.islands[key] = nil
 		end
 
 		-- Update worker logic
