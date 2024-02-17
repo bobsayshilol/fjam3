@@ -1,7 +1,7 @@
 local class = {}
 
 local MoveSpeed = 30
-local IslandSpawnTime = 3
+local IslandSpawnTime = 0.8
 local MaxBridgeLength = 20
 
 local Island
@@ -54,7 +54,7 @@ local function spawn_island(self)
 	-- TODO: search space should extend as stuff gets added
 	-- TODO: query for sections above and below our current bit
 	local y = love.math.random(-100, 100)
-	local island = Island.new(100, y, self.world)
+	local island = Island.new(300, y, self.world)
 	table.insert(self.islands, island)
 end
 

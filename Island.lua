@@ -1,8 +1,8 @@
 local class = {}
 
 local TileSize = 5
-local MinIslandSpeed = 4
-local MaxIslandSpeed = 10
+local MinIslandSpeed = 10
+local MaxIslandSpeed = 20
 
 local DRAW_DEBUG = false
 
@@ -73,7 +73,7 @@ end
 function class.new(x, y, world, start)
     local state = {}
     state.position = { x = x, y = y }
-    state.angle = 0
+    state.angle = start and 0 or (love.math.random() * 2 * math.pi)
     state.shape = start and class.Shapes.StartingIsland or random_shape()
     state.locked = not not start
     state.speed_x = -love.math.random(MinIslandSpeed * 10, MaxIslandSpeed * 10) / 10
