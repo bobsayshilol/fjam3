@@ -52,6 +52,55 @@ class.Shapes = {
             0 * TileSize, 2 * TileSize,
         }
     },
+    Wide = {
+        graphics = {
+            { x = 0, y = 0 },
+            { x = 1, y = 0 },
+            { x = 2, y = 0 },
+            { x = 3, y = 0 },
+        },
+        physics = {
+            0 * TileSize, 0 * TileSize,
+            4 * TileSize, 0 * TileSize,
+            4 * TileSize, 1 * TileSize,
+            0 * TileSize, 1 * TileSize,
+        }
+    },
+    L = {
+        graphics = {
+            { x = 0, y = 0 },
+            { x = 1, y = 0 },
+            { x = 2, y = 0 },
+            { x = 2, y = 1 },
+        },
+        physics = {
+            0 * TileSize, 0 * TileSize,
+            3 * TileSize, 0 * TileSize,
+            3 * TileSize, 2 * TileSize,
+            2 * TileSize, 2 * TileSize,
+            2 * TileSize, 1 * TileSize,
+            0 * TileSize, 1 * TileSize,
+        }
+    },
+    T = {
+        graphics = {
+            { x = 0, y = 0 },
+            { x = 1, y = 0 },
+            { x = 2, y = 0 },
+            { x = 1, y = 1 },
+            { x = 1, y = 2 },
+        },
+        physics = {
+            0 * TileSize, 0 * TileSize,
+            3 * TileSize, 0 * TileSize,
+            3 * TileSize, 1 * TileSize,
+            2 * TileSize, 1 * TileSize,
+            2 * TileSize, 3 * TileSize,
+            1 * TileSize, 3 * TileSize,
+            1 * TileSize, 1 * TileSize,
+            0 * TileSize, 1 * TileSize,
+        }
+    },
 }
 
 local function random_shape()
@@ -89,6 +138,10 @@ function class.new(x, y, world, start)
         self.body:setFixedRotation(self.locked)
     end
     create_phys(state)
+
+    if not start then
+        state.body:setAngularVelocity((love.math.random() - 0.5) * math.pi)
+    end
 
     state.delete = function(self)
         self.body:destroy()
