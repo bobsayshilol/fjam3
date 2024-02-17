@@ -69,6 +69,7 @@ end
 function class.new(x, y, world, start)
     local state = {}
     state.position = { x = x, y = y }
+    state.angle = 0
     state.shape = start and class.Shapes.StartingIsland or random_shape()
 
     -- Physics
@@ -87,19 +88,24 @@ function class.new(x, y, world, start)
             x = TileSize * camera.scale_x,
             y = TileSize * camera.scale_y,
         }
+        local origin = camera:to_screen({
+            x = self.position.x,
+            y = self.position.y,
+        })
+        love.graphics.push("transform")
+        love.graphics.translate(origin.x, origin.y)
+        love.graphics.rotate(self.angle)
         for _, tile_pos in pairs(self.shape.graphics) do
-            local origin = camera:to_screen({
-                x = self.position.x + TileSize * tile_pos.x,
-                y = self.position.y + TileSize * tile_pos.y,
-            })
             love.graphics.setColor(0, 0.7, 0)
-            love.graphics.rectangle("fill", origin.x, origin.y, tile_size.x, tile_size.y)
+            love.graphics.rectangle("fill", TileSize * tile_pos.x, TileSize * tile_pos.y, tile_size.x, tile_size.y)
         end
+        love.graphics.pop()
     end
 
     state.update = function(self, dt)
-        state.position.x = state.body:getX()
-        state.position.y = state.body:getY()
+        self.position.x = self.body:getX()
+        self.position.y = self.body:getY()
+        self.angle = self.body:getAngle()
     end
 
     return state
