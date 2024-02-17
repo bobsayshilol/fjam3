@@ -99,9 +99,11 @@ function class.new()
 		self.islands[1] = Island.new(center.x, center.y, self.world, true)
 		self.workers[1] = Worker.new(center.x, center.y)
 
+		-- Spawn some floating ones
+		for i = 1, 5 do
+			spawn_island(self)
+		end
 		self.next_island_time = IslandSpawnTime
-
-		spawn_island(self)
 	end
 
 	state.update = function(self, dt)
@@ -192,7 +194,8 @@ function class.new()
 			end
 		elseif self.current_bridge_state == BridgeStates.Started then
 			if hit ~= nil and hit ~= self.bridge_island then
-				print("TODO: join islands")
+				hit:lock()
+				-- TODO: add bridge line
 			end
 			self.bridge_start = nil
 			self.bridge_island = nil

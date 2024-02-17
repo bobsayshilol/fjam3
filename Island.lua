@@ -1,6 +1,10 @@
 local class = {}
 
 local TileSize = 5
+local MinIslandSpeed = 2
+local MaxIslandSpeed = 10
+
+local DRAW_DEBUG = false
 
 class.Shapes = {
     StartingIsland = {
@@ -71,19 +75,39 @@ function class.new(x, y, world, start)
     state.position = { x = x, y = y }
     state.angle = 0
     state.shape = start and class.Shapes.StartingIsland or random_shape()
+    state.locked = not not start
+    state.speed = love.math.random(MinIslandSpeed * 10, MaxIslandSpeed * 10) / 10
 
     -- Physics
-    state.body = love.physics.newBody(world, x, y, "dynamic")
-    local shape2d = love.physics.newPolygonShape(state.shape.physics)
-    state.fixture = love.physics.newFixture(state.body, shape2d)
-    state.fixture:setUserData(state)
+    local create_phys = function(self)
+        self.body = love.physics.newBody(world, self.position.x, self.position.y, self.locked and "static" or "dynamic")
+        local shape2d = love.physics.newPolygonShape(self.shape.physics)
+        self.fixture = love.physics.newFixture(self.body, shape2d)
+        self.fixture:setUserData(self)
+        self.body:setAngle(self.angle)
+        self.body:setFixedRotation(self.locked)
+    end
+    create_phys(state)
 
-    -- All newly spawned islands move to the left
-    if not start then
-        state.body:setLinearVelocity(-5, 0)
+    state.delete = function(self)
+        self.body:destroy()
+    end
+
+    state.lock = function(self)
+        self:delete()
+        self.locked = true
+        create_phys(self)
     end
 
     state.draw = function(self, camera)
+        if DRAW_DEBUG then
+            love.graphics.setColor(1, 1, 1)
+            local x1, y1, x2, y2 = self.fixture:getBoundingBox()
+            local p1 = camera:to_screen({ x = x1, y = y1 })
+            local p2 = camera:to_screen({ x = x2, y = y2 })
+            love.graphics.polygon("line", p1.x, p1.y, p1.x, p2.y, p2.x, p2.y, p2.x, p1.y)
+        end
+
         local tile_size = {
             x = TileSize * camera.scale_x,
             y = TileSize * camera.scale_y,
@@ -95,9 +119,9 @@ function class.new(x, y, world, start)
         love.graphics.push("transform")
         love.graphics.translate(origin.x, origin.y)
         love.graphics.rotate(self.angle)
+        love.graphics.setColor(0, 0.7, 0)
         for _, tile_pos in pairs(self.shape.graphics) do
-            love.graphics.setColor(0, 0.7, 0)
-            love.graphics.rectangle("fill", TileSize * tile_pos.x, TileSize * tile_pos.y, tile_size.x, tile_size.y)
+            love.graphics.rectangle("fill", tile_size.x * tile_pos.x, tile_size.y * tile_pos.y, tile_size.x, tile_size.y)
         end
         love.graphics.pop()
     end
@@ -106,6 +130,11 @@ function class.new(x, y, world, start)
         self.position.x = self.body:getX()
         self.position.y = self.body:getY()
         self.angle = self.body:getAngle()
+
+        -- All newly spawned islands move to the left
+        if not self.locked then
+            self.body:setLinearVelocity(-self.speed, 0)
+        end
     end
 
     return state
