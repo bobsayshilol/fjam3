@@ -257,7 +257,7 @@ function class.new()
 	state.wheelmoved = function(self, x, y)
 		-- Zoom
 		local speed = 0.4
-		local min = 3
+		local min = 8
 		local max = 15
 		local scale = self.camera.scale + y * speed
 		if scale < min then scale = min end
