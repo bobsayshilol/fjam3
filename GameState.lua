@@ -7,6 +7,7 @@ local MaxBridgeLength = 20
 local Island
 local Worker
 local Bridge
+local Building
 local IslandGraph
 
 local function vec_len2(vec)
@@ -70,6 +71,8 @@ function class.load()
 	Island = assert(require("Island"))
 	Worker = assert(require("Worker"))
 	Bridge = assert(require("Bridge"))
+	Building = assert(require("Building"))
+	IslandGraph = assert(require("IslandGraph"))
 end
 
 function class.new()
@@ -119,6 +122,9 @@ function class.new()
 			spawn_island(self)
 		end
 		self.next_island_time = IslandSpawnTime
+
+		-- Setup the graph
+		self.graph = IslandGraph.new(self.islands[1])
 	end
 
 	state.update = function(self, dt)
@@ -164,9 +170,6 @@ function class.new()
 	end
 
 	state.draw = function(self)
-		love.graphics.setColor(1, 1, 1)
-		love.graphics.print("Game goes here", 10, 10)
-
 		-- Draw back to front
 		for _, island in pairs(self.islands) do
 			island:draw(self.camera)
@@ -184,11 +187,26 @@ function class.new()
 			local stop_s = { x = love.mouse.getX(), y = love.mouse.getY() }
 			Bridge.draw(self.camera, start_s, stop_s, self.bridge_allowed)
 		end
+
+		-- TODO: stats
+		love.graphics.setColor(1, 1, 1)
+		love.graphics.print("Resources: ", 10, 10)
+
+		-- TODO: UI for building things
 	end
 
 	state.exit = function(self)
+		for _, island in pairs(self.islands) do
+			island:delete()
+		end
 		self.islands = nil
+		self.bridge = nil
 		self.workers = nil
+		self.resources = nil
+		self.graph = nil
+
+		-- Finally destroy the world
+		self.world:destroy()
 	end
 
 	state.keypressed = function(self, key)
@@ -196,6 +214,7 @@ function class.new()
 	end
 
 	state.mousepressed = function(self, x, y, button)
+		-- TODO: may need to handle other input
 		if button ~= 1 then
 			return
 		end
@@ -215,6 +234,7 @@ function class.new()
 			if is_bridge_allowed(self, hit, pos) then
 				hit:lock()
 				table.insert(self.bridges, Bridge.new(self.bridge_start, pos))
+				self.graph:add_bridge(self.bridge_island, self.bridge_start, hit, pos)
 				deselect = true
 			end
 			if deselect then
@@ -226,6 +246,7 @@ function class.new()
 	end
 
 	state.mousemoved = function(self, x, y, dx, dy)
+		-- Pan with right click
 		if love.mouse.isDown(2) then
 			self.camera.pos_x = self.camera.pos_x - dx / self.camera.scale
 			self.camera.pos_y = self.camera.pos_y - dy / self.camera.scale
@@ -234,6 +255,7 @@ function class.new()
 	end
 
 	state.wheelmoved = function(self, x, y)
+		-- Zoom
 		local speed = 0.4
 		local min = 3
 		local max = 15
