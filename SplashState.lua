@@ -26,7 +26,8 @@ function class.new()
 	end
 
 	state.update = function(self, dt)
-		return state.next
+		return "game"
+		--return state.next
 	end
 
 	state.keypressed = function(self, key)
