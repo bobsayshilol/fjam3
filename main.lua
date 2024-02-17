@@ -75,8 +75,8 @@ function love.mousepressed(x, y, button)
 	callMethod(g_curState, "mousepressed", x, y, button)
 end
 
-function love.mousemoved(x, y)
-	callMethod(g_curState, "mousemoved", x, y)
+function love.mousemoved(x, y, dx, dy)
+	callMethod(g_curState, "mousemoved", x, y, dx, dy)
 end
 
 function love.wheelmoved(x, y)

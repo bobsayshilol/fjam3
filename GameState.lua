@@ -12,6 +12,14 @@ local function vec_len2(vec)
 	return vec.x * vec.x + vec.y * vec.y
 end
 
+local function clamp_camera(camera)
+	local size = 300
+	if camera.pos_x > size then camera.pos_x = size end
+	if camera.pos_x < -size then camera.pos_x = -size end
+	if camera.pos_y > size then camera.pos_y = size end
+	if camera.pos_y < -size then camera.pos_y = -size end
+end
+
 local function update_camera(camera, dt)
 	if love.keyboard.isDown("w", "up") then
 		camera.pos_y = camera.pos_y - MoveSpeed * dt / (camera.scale_y / 10)
@@ -25,13 +33,7 @@ local function update_camera(camera, dt)
 	if love.keyboard.isDown("d", "right") then
 		camera.pos_x = camera.pos_x + MoveSpeed * dt / (camera.scale_x / 10)
 	end
-
-	-- Clamp it
-	local size = 300
-	if camera.pos_x > size then camera.pos_x = size end
-	if camera.pos_x < -size then camera.pos_x = -size end
-	if camera.pos_y > size then camera.pos_y = size end
-	if camera.pos_y < -size then camera.pos_y = -size end
+	clamp_camera(camera)
 end
 
 local function try_hit(world, pos)
@@ -94,10 +96,10 @@ function class.new()
 			x = love.graphics.getPixelWidth() / 2,
 			y = love.graphics.getPixelHeight() / 2
 		})
-		state.islands[1] = Island.new(center.x, center.y, self.world, true)
-		state.workers[1] = Worker.new(center.x, center.y)
+		self.islands[1] = Island.new(center.x, center.y, self.world, true)
+		self.workers[1] = Worker.new(center.x, center.y)
 
-		state.next_island_time = IslandSpawnTime
+		self.next_island_time = IslandSpawnTime
 
 		spawn_island(self)
 	end
@@ -174,6 +176,10 @@ function class.new()
 	end
 
 	state.mousepressed = function(self, x, y, button)
+		if button ~= 1 then
+			return
+		end
+
 		local pos = self.camera:from_screen({ x = x, y = y })
 		local hit = try_hit(self.world, pos)
 
@@ -191,6 +197,14 @@ function class.new()
 			self.bridge_start = nil
 			self.bridge_island = nil
 			self.current_bridge_state = BridgeStates.Idle
+		end
+	end
+
+	state.mousemoved = function(self, x, y, dx, dy)
+		if love.mouse.isDown(2) then
+			self.camera.pos_x = self.camera.pos_x - dx / self.camera.scale_y
+			self.camera.pos_y = self.camera.pos_y - dy / self.camera.scale_y
+			clamp_camera(self.camera)
 		end
 	end
 
