@@ -71,8 +71,16 @@ function love.textinput(text)
 	callMethod(g_curState, "textinput", text)
 end
 
+function love.mousepressed(x, y, button)
+	callMethod(g_curState, "mousepressed", x, y, button)
+end
+
 function love.mousemoved(x, y)
 	callMethod(g_curState, "mousemoved", x, y)
+end
+
+function love.wheelmoved(x, y)
+	callMethod(g_curState, "wheelmoved", x, y)
 end
 
 function love.touchpressed()

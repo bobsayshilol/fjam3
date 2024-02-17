@@ -1,10 +1,37 @@
 local class = {}
 
 local MoveSpeed = 30
+local IslandSpawnTime = 3
 
 local Island
 local Worker
 local IslandGraph
+
+local function update_camera(camera, dt)
+	if love.keyboard.isDown("w", "up") then
+		camera.pos_y = camera.pos_y - MoveSpeed * dt
+	end
+	if love.keyboard.isDown("s", "down") then
+		camera.pos_y = camera.pos_y + MoveSpeed * dt
+	end
+	if love.keyboard.isDown("a", "left") then
+		camera.pos_x = camera.pos_x - MoveSpeed * dt
+	end
+	if love.keyboard.isDown("d", "right") then
+		camera.pos_x = camera.pos_x + MoveSpeed * dt
+	end
+
+	-- Clamp it
+	local size = 300
+	if camera.pos_x > size then camera.pos_x = size end
+	if camera.pos_x < -size then camera.pos_x = -size end
+	if camera.pos_y > size then camera.pos_y = size end
+	if camera.pos_y < -size then camera.pos_y = -size end
+end
+
+local function spawn_island(self)
+	self.islands[#self.islands + 1] = Island.new(100, 0)
+end
 
 function class.load()
 	Island = assert(require("Island"))
@@ -30,6 +57,8 @@ function class.new()
 		end
 	}
 
+	state.next_island_time = 0
+
 	state.enter = function(self)
 		local center = self.camera:from_screen({
 			x = love.graphics.getPixelWidth() / 2,
@@ -37,21 +66,19 @@ function class.new()
 		})
 		state.islands[1] = Island.new(center.x, center.y, Island.Shapes.StartingIsland)
 		state.workers[1] = Worker.new(center.x, center.y)
+
+		state.next_island_time = IslandSpawnTime
 	end
 
 	state.update = function(self, dt)
 		-- Movement
-		if love.keyboard.isDown("w", "up") then
-			self.camera.pos_y = self.camera.pos_y - MoveSpeed * dt
-		end
-		if love.keyboard.isDown("s", "down") then
-			self.camera.pos_y = self.camera.pos_y + MoveSpeed * dt
-		end
-		if love.keyboard.isDown("a", "left") then
-			self.camera.pos_x = self.camera.pos_x - MoveSpeed * dt
-		end
-		if love.keyboard.isDown("d", "right") then
-			self.camera.pos_x = self.camera.pos_x + MoveSpeed * dt
+		update_camera(self.camera, dt)
+
+		-- Spawn any new islands
+		self.next_island_time = self.next_island_time - dt
+		if self.next_island_time < 0 then
+			self.next_island_time = IslandSpawnTime
+			spawn_island(self)
 		end
 
 		-- Logic
@@ -85,6 +112,17 @@ function class.new()
 
 	state.keypressed = function(self, key)
 		--print(key)
+	end
+
+	state.wheelmoved = function(self, x, y)
+		local speed = 0.4
+		local min = 3
+		local max = 15
+		local scale = self.camera.scale_x + y * speed
+		if scale < min then scale = min end
+		if scale > max then scale = max end
+		self.camera.scale_x = scale
+		self.camera.scale_y = scale
 	end
 
 	return state

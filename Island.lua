@@ -18,12 +18,34 @@ class.Shapes = {
         { x = 0, y = 0 },
         { x = 1, y = 0 },
     },
+    Square = {
+        { x = 0, y = 0 },
+        { x = 0, y = 1 },
+        { x = 1, y = 0 },
+        { x = 1, y = 1 },
+    },
 }
+
+local function random_shape()
+    local count = 0
+    for k, v in pairs(class.Shapes) do
+        count = count + 1
+    end
+    local idx = love.math.random(count - 1)
+    for k, v in pairs(class.Shapes) do
+        if v ~= class.Shapes.StartingIsland then
+            idx = idx - 1
+            if idx == 0 then
+                return v
+            end
+        end
+    end
+end
 
 function class.new(x, y, shape)
     local state = {}
     state.position = { x = x, y = y }
-    state.shape = shape
+    state.shape = shape or random_shape()
 
     state.draw = function(self, camera)
         local tile_size = {
