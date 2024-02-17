@@ -1,7 +1,7 @@
 local class = {}
 
 local TileSize = 5
-local MinIslandSpeed = 2
+local MinIslandSpeed = 4
 local MaxIslandSpeed = 10
 
 local DRAW_DEBUG = false
@@ -76,7 +76,8 @@ function class.new(x, y, world, start)
     state.angle = 0
     state.shape = start and class.Shapes.StartingIsland or random_shape()
     state.locked = not not start
-    state.speed = love.math.random(MinIslandSpeed * 10, MaxIslandSpeed * 10) / 10
+    state.speed_x = -love.math.random(MinIslandSpeed * 10, MaxIslandSpeed * 10) / 10
+    state.speed_y = love.math.random(-MinIslandSpeed * 10, MinIslandSpeed * 10) / 20
 
     -- Physics
     local create_phys = function(self)
@@ -97,6 +98,10 @@ function class.new(x, y, world, start)
         self:delete()
         self.locked = true
         create_phys(self)
+    end
+
+    state.is_locked = function(self)
+        return self.locked
     end
 
     state.draw = function(self, camera)
@@ -133,7 +138,7 @@ function class.new(x, y, world, start)
 
         -- All newly spawned islands move to the left
         if not self.locked then
-            self.body:setLinearVelocity(-self.speed, 0)
+            self.body:setLinearVelocity(self.speed_x, state.speed_y)
         end
     end
 

@@ -1,7 +1,7 @@
 local class = {}
 
 local MoveSpeed = 30
-local IslandSpawnTime = 5
+local IslandSpawnTime = 3
 local MaxBridgeLength = 20
 
 local Island
@@ -51,7 +51,10 @@ local function try_hit(world, pos)
 end
 
 local function spawn_island(self)
-	local island = Island.new(300, 0, self.world)
+	-- TODO: search space should extend as stuff gets added
+	-- TODO: query for sections above and below our current bit
+	local y = love.math.random(-100, 100)
+	local island = Island.new(100, y, self.world)
 	table.insert(self.islands, island)
 end
 
@@ -91,13 +94,17 @@ function class.new()
 		-- Setup physics
 		self.world = love.physics.newWorld()
 
-		-- Create the initial island
+		-- Move the camera to the center
 		local center = self.camera:from_screen({
 			x = love.graphics.getPixelWidth() / 2,
 			y = love.graphics.getPixelHeight() / 2
 		})
-		self.islands[1] = Island.new(center.x, center.y, self.world, true)
-		self.workers[1] = Worker.new(center.x, center.y)
+		self.camera.pos_x = -center.x
+		self.camera.pos_y = -center.y
+
+		-- Create the initial island
+		self.islands[1] = Island.new(0, 0, self.world, true)
+		self.workers[1] = Worker.new(0, 0)
 
 		-- Spawn some floating ones
 		for i = 1, 5 do
@@ -186,8 +193,8 @@ function class.new()
 		local hit = try_hit(self.world, pos)
 
 		if self.current_bridge_state == BridgeStates.Idle then
-			-- TODO: mustn't be on the "main" land bit
-			if hit ~= nil then
+			-- Must be locked (ie on the "main" land bit)
+			if hit ~= nil and hit:is_locked() then
 				self.bridge_start = pos
 				self.bridge_island = hit
 				self.current_bridge_state = BridgeStates.Started
