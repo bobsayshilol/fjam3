@@ -34,6 +34,20 @@ local function update_camera(camera, dt)
 	if camera.pos_y < -size then camera.pos_y = -size end
 end
 
+local function try_hit(world, pos)
+	local hit = nil
+	world:queryBoundingBox(pos.x, pos.y, pos.x, pos.y,
+		function(fixture)
+			-- Just because the AABB overlaps doesn't mean that it's a hit
+			if fixture:testPoint(pos.x, pos.y) then
+				hit = fixture:getUserData()
+				return false
+			end
+			return true
+		end)
+	return hit
+end
+
 local function spawn_island(self)
 	local island = Island.new(300, 0, self.world)
 	table.insert(self.islands, island)
@@ -69,6 +83,7 @@ function class.new()
 	state.current_bridge_state = BridgeStates.Idle
 	state.bridge_start = nil
 	state.bridge_island = nil
+	state.bridge_allowed = false
 
 	state.enter = function(self)
 		-- Setup physics
@@ -101,6 +116,16 @@ function class.new()
 			worker:update(dt)
 		end
 
+		-- Check bridge validity
+		if self.bridge_start ~= nil then
+			local stop_w = self.camera:from_screen({ x = love.mouse.getX(), y = love.mouse.getY() })
+			local delta = { x = stop_w.x - self.bridge_start.x, y = stop_w.y - self.bridge_start.y }
+			local hit = try_hit(self.world, stop_w)
+			local valid_target = hit ~= nil and hit ~= self.bridge_island
+			local size_ok = vec_len2(delta) < MaxBridgeLength * MaxBridgeLength
+			self.bridge_allowed = valid_target and size_ok
+		end
+
 		-- Spawn any new islands
 		self.next_island_time = self.next_island_time - dt
 		if self.next_island_time < 0 then
@@ -125,23 +150,23 @@ function class.new()
 		for _, worker in pairs(self.workers) do
 			worker:draw(self.camera)
 		end
-		if state.bridge_start ~= nil then
-			local start_s = self.camera:to_screen(state.bridge_start)
-			local stop_s = { x = love.mouse.getX(), y = love.mouse.getY() }
-			local stop_w = self.camera:from_screen(stop_s)
-			local delta = { x = stop_w.x - state.bridge_start.x, y = stop_w.y - state.bridge_start.y }
-			if vec_len2(delta) > MaxBridgeLength * MaxBridgeLength then
-				love.graphics.setColor(1, 0, 0)
-			else
+
+		-- Current construction
+		if self.bridge_start ~= nil then
+			if self.bridge_allowed then
 				love.graphics.setColor(0, 0, 1)
+			else
+				love.graphics.setColor(1, 0, 0)
 			end
+			local start_s = self.camera:to_screen(self.bridge_start)
+			local stop_s = { x = love.mouse.getX(), y = love.mouse.getY() }
 			love.graphics.line(start_s.x, start_s.y, stop_s.x, stop_s.y)
 		end
 	end
 
 	state.exit = function(self)
 		self.islands = nil
-		state.workers = nil
+		self.workers = nil
 	end
 
 	state.keypressed = function(self, key)
@@ -150,36 +175,22 @@ function class.new()
 
 	state.mousepressed = function(self, x, y, button)
 		local pos = self.camera:from_screen({ x = x, y = y })
-		local try_hit = function()
-			local hit = nil
-			self.world:queryBoundingBox(pos.x, pos.y, pos.x, pos.y,
-				function(fixture)
-					-- Just because the AABB overlaps doesn't mean that it's a hit
-					if fixture:testPoint(pos.x, pos.y) then
-						hit = fixture:getUserData()
-						return false
-					end
-					return true
-				end)
-			-- TODO: mustn't be on the "main" land bit
-			return hit
-		end
+		local hit = try_hit(self.world, pos)
 
-		if state.current_bridge_state == BridgeStates.Idle then
-			local hit = try_hit()
+		if self.current_bridge_state == BridgeStates.Idle then
+			-- TODO: mustn't be on the "main" land bit
 			if hit ~= nil then
-				state.bridge_start = pos
-				state.bridge_island = hit
-				state.current_bridge_state = BridgeStates.Started
+				self.bridge_start = pos
+				self.bridge_island = hit
+				self.current_bridge_state = BridgeStates.Started
 			end
-		elseif state.current_bridge_state == BridgeStates.Started then
-			local hit = try_hit()
-			if hit ~= nil and hit ~= state.bridge_island then
+		elseif self.current_bridge_state == BridgeStates.Started then
+			if hit ~= nil and hit ~= self.bridge_island then
 				print("TODO: join islands")
 			end
-			state.bridge_start = nil
-			state.bridge_island = nil
-			state.current_bridge_state = BridgeStates.Idle
+			self.bridge_start = nil
+			self.bridge_island = nil
+			self.current_bridge_state = BridgeStates.Idle
 		end
 	end
 
