@@ -147,7 +147,7 @@ function class.new(x, y, world, start)
 
     -- Add some resources
     if love.math.random() > 0.6 and not start then
-        local type = love.math.random(#Resource.Types)
+        local type = love.math.random(1, Resource.Types.Max)
         local tile = state.shape.graphics[love.math.random(#state.shape.graphics)]
         local count = love.math.random(10)
         state.resource = Resource.new(type, count, 0, tile)
