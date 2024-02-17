@@ -6,6 +6,7 @@ local MaxBridgeLength = 20
 
 local Island
 local Worker
+local Bridge
 local IslandGraph
 
 local function vec_len2(vec)
@@ -22,16 +23,16 @@ end
 
 local function update_camera(camera, dt)
 	if love.keyboard.isDown("w", "up") then
-		camera.pos_y = camera.pos_y - MoveSpeed * dt / (camera.scale_y / 10)
+		camera.pos_y = camera.pos_y - MoveSpeed * dt / (camera.scale / 10)
 	end
 	if love.keyboard.isDown("s", "down") then
-		camera.pos_y = camera.pos_y + MoveSpeed * dt / (camera.scale_y / 10)
+		camera.pos_y = camera.pos_y + MoveSpeed * dt / (camera.scale / 10)
 	end
 	if love.keyboard.isDown("a", "left") then
-		camera.pos_x = camera.pos_x - MoveSpeed * dt / (camera.scale_x / 10)
+		camera.pos_x = camera.pos_x - MoveSpeed * dt / (camera.scale / 10)
 	end
 	if love.keyboard.isDown("d", "right") then
-		camera.pos_x = camera.pos_x + MoveSpeed * dt / (camera.scale_x / 10)
+		camera.pos_x = camera.pos_x + MoveSpeed * dt / (camera.scale / 10)
 	end
 	clamp_camera(camera)
 end
@@ -50,6 +51,13 @@ local function try_hit(world, pos)
 	return hit
 end
 
+local function is_bridge_allowed(self, hit, stop_w)
+	local valid_target = hit ~= nil and hit ~= self.bridge_island
+	local delta = { x = stop_w.x - self.bridge_start.x, y = stop_w.y - self.bridge_start.y }
+	local size_ok = vec_len2(delta) < MaxBridgeLength * MaxBridgeLength
+	return valid_target and size_ok
+end
+
 local function spawn_island(self)
 	-- TODO: search space should extend as stuff gets added
 	-- TODO: query for sections above and below our current bit
@@ -61,6 +69,7 @@ end
 function class.load()
 	Island = assert(require("Island"))
 	Worker = assert(require("Worker"))
+	Bridge = assert(require("Bridge"))
 end
 
 function class.new()
@@ -72,13 +81,12 @@ function class.new()
 	state.camera = {
 		pos_x = 0,
 		pos_y = 0,
-		scale_x = 10,
-		scale_y = 10,
+		scale = 10,
 		to_screen = function(self, pos)
-			return { x = self.scale_x * (pos.x - self.pos_x), y = self.scale_y * (pos.y - self.pos_y) }
+			return { x = self.scale * (pos.x - self.pos_x), y = self.scale * (pos.y - self.pos_y) }
 		end,
 		from_screen = function(self, pos)
-			return { x = pos.x / self.scale_x + self.pos_x, y = pos.y / self.scale_y + self.pos_y }
+			return { x = pos.x / self.scale + self.pos_x, y = pos.y / self.scale + self.pos_y }
 		end
 	}
 
@@ -141,11 +149,8 @@ function class.new()
 		-- Check bridge validity
 		if self.bridge_start ~= nil then
 			local stop_w = self.camera:from_screen({ x = love.mouse.getX(), y = love.mouse.getY() })
-			local delta = { x = stop_w.x - self.bridge_start.x, y = stop_w.y - self.bridge_start.y }
 			local hit = try_hit(self.world, stop_w)
-			local valid_target = hit ~= nil and hit ~= self.bridge_island
-			local size_ok = vec_len2(delta) < MaxBridgeLength * MaxBridgeLength
-			self.bridge_allowed = valid_target and size_ok
+			self.bridge_allowed = is_bridge_allowed(self, hit, stop_w)
 		end
 
 		-- Spawn any new islands
@@ -167,7 +172,7 @@ function class.new()
 			island:draw(self.camera)
 		end
 		for _, bridge in pairs(self.bridges) do
-			--draw_bridge(bridge)
+			bridge:draw(self.camera)
 		end
 		for _, worker in pairs(self.workers) do
 			worker:draw(self.camera)
@@ -175,14 +180,9 @@ function class.new()
 
 		-- Current construction
 		if self.bridge_start ~= nil then
-			if self.bridge_allowed then
-				love.graphics.setColor(0, 0, 1)
-			else
-				love.graphics.setColor(1, 0, 0)
-			end
 			local start_s = self.camera:to_screen(self.bridge_start)
 			local stop_s = { x = love.mouse.getX(), y = love.mouse.getY() }
-			love.graphics.line(start_s.x, start_s.y, stop_s.x, stop_s.y)
+			Bridge.draw(self.camera, start_s, stop_s, self.bridge_allowed)
 		end
 	end
 
@@ -211,20 +211,24 @@ function class.new()
 				self.current_bridge_state = BridgeStates.Started
 			end
 		elseif self.current_bridge_state == BridgeStates.Started then
-			if hit ~= nil and hit ~= self.bridge_island then
+			local deselect = hit == nil
+			if is_bridge_allowed(self, hit, pos) then
 				hit:lock()
-				-- TODO: add bridge line
+				table.insert(self.bridges, Bridge.new(self.bridge_start, pos))
+				deselect = true
 			end
-			self.bridge_start = nil
-			self.bridge_island = nil
-			self.current_bridge_state = BridgeStates.Idle
+			if deselect then
+				self.bridge_start = nil
+				self.bridge_island = nil
+				self.current_bridge_state = BridgeStates.Idle
+			end
 		end
 	end
 
 	state.mousemoved = function(self, x, y, dx, dy)
 		if love.mouse.isDown(2) then
-			self.camera.pos_x = self.camera.pos_x - dx / self.camera.scale_y
-			self.camera.pos_y = self.camera.pos_y - dy / self.camera.scale_y
+			self.camera.pos_x = self.camera.pos_x - dx / self.camera.scale
+			self.camera.pos_y = self.camera.pos_y - dy / self.camera.scale
 			clamp_camera(self.camera)
 		end
 	end
@@ -233,11 +237,11 @@ function class.new()
 		local speed = 0.4
 		local min = 3
 		local max = 15
-		local scale = self.camera.scale_x + y * speed
+		local scale = self.camera.scale + y * speed
 		if scale < min then scale = min end
 		if scale > max then scale = max end
-		self.camera.scale_x = scale
-		self.camera.scale_y = scale
+		self.camera.scale = scale
+		self.camera.scale = scale
 	end
 
 	return state

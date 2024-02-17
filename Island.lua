@@ -166,10 +166,7 @@ function class.new(x, y, world, start)
             love.graphics.polygon("line", p1.x, p1.y, p1.x, p2.y, p2.x, p2.y, p2.x, p1.y)
         end
 
-        local tile_size = {
-            x = TileSize * camera.scale_x,
-            y = TileSize * camera.scale_y,
-        }
+        local tile_size = TileSize * camera.scale
         local origin = camera:to_screen({
             x = self.position.x,
             y = self.position.y,
@@ -179,7 +176,7 @@ function class.new(x, y, world, start)
         love.graphics.rotate(self.angle)
         love.graphics.setColor(0, 0.7, 0)
         for _, tile_pos in pairs(self.shape.graphics) do
-            love.graphics.rectangle("fill", tile_size.x * tile_pos.x, tile_size.y * tile_pos.y, tile_size.x, tile_size.y)
+            love.graphics.rectangle("fill", tile_size * tile_pos.x, tile_size * tile_pos.y, tile_size, tile_size)
         end
         love.graphics.pop()
     end
