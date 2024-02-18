@@ -7,6 +7,7 @@ local MaxIslandSpeed = 20
 local DRAW_DEBUG = false
 
 local Resource = assert(require("Resource"))
+local Building = assert(require("Building"))
 
 class.Shapes = {
     StartingIsland = {
@@ -154,6 +155,7 @@ function class.new(x, y, world, start)
     else
         state.resource = nil
     end
+    state.buildings = {}
 
     state.delete = function(self)
         self.body:destroy()
@@ -195,6 +197,9 @@ function class.new(x, y, world, start)
         if self.resource ~= nil then
             self.resource:draw(tile_size)
         end
+        for _, building in pairs(self.buildings) do
+            building:draw(tile_size)
+        end
         love.graphics.pop()
     end
 
@@ -207,6 +212,34 @@ function class.new(x, y, world, start)
         if not self.locked then
             self.body:setLinearVelocity(self.speed_x, state.speed_y)
         end
+    end
+
+    state.try_build = function(self, type, pos)
+        -- Map into our space
+        local transform = love.math.newTransform(0, 0, -self.angle)
+        local px, py = transform:transformPoint(pos.x - self.position.x, pos.y - self.position.y)
+
+        -- Quantize
+        px = math.floor(px / TileSize)
+        py = math.floor(py / TileSize)
+        pos = { x = px, y = py }
+
+        -- Check that we can build it
+        if self.resource ~= nil then
+            if self.resource.pos.x == pos.x and self.resource.pos.y == pos.y then
+                return false
+            end
+        end
+        for _, building in pairs(self.buildings) do
+            if building.pos.x == pos.x and building.pos.y == pos.y then
+                return false
+            end
+        end
+
+        -- Build it
+        local building = Building.new(type, pos)
+        table.insert(self.buildings, building)
+        return true
     end
 
     return state

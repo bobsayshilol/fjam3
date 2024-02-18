@@ -95,11 +95,18 @@ function class.new()
 
 	state.next_island_time = 0
 
-	local BridgeStates = { Idle = 0, Started = 1 }
-	state.current_bridge_state = BridgeStates.Idle
+	local MouseStates = {
+		Idle = 0,
+		Bridge = 1,
+		Building = 2,
+	}
+	state.current_mouse_state = MouseStates.Idle
+
 	state.bridge_start = nil
 	state.bridge_island = nil
 	state.bridge_allowed = false
+
+	state.building_type = nil
 
 	state.enter = function(self)
 		-- Setup physics
@@ -190,7 +197,7 @@ function class.new()
 
 		-- TODO: stats
 		love.graphics.setColor(1, 1, 1)
-		love.graphics.print("Resources: ", 10, 10)
+		love.graphics.print("Current mode: " .. Building.to_string(state.building_type), 10, 10)
 
 		-- TODO: UI for building things
 	end
@@ -211,6 +218,20 @@ function class.new()
 
 	state.keypressed = function(self, key)
 		--print(key)
+
+		-- Pick between type
+		if self.current_mouse_state == MouseStates.Idle or self.current_mouse_state == MouseStates.Building then
+			if key == "1" then
+				self.current_mouse_state = MouseStates.Idle
+				state.building_type = nil
+			elseif key == "2" then
+				self.current_mouse_state = MouseStates.Building
+				self.building_type = Building.Types.House
+			elseif key == "3" then
+				self.current_mouse_state = MouseStates.Building
+				self.building_type = Building.Types.Turret
+			end
+		end
 	end
 
 	state.mousepressed = function(self, x, y, button)
@@ -222,14 +243,14 @@ function class.new()
 		local pos = self.camera:from_screen({ x = x, y = y })
 		local hit = try_hit(self.world, pos)
 
-		if self.current_bridge_state == BridgeStates.Idle then
+		if self.current_mouse_state == MouseStates.Idle then
 			-- Must be locked (ie on the "main" land bit)
 			if hit ~= nil and hit:is_locked() then
 				self.bridge_start = pos
 				self.bridge_island = hit
-				self.current_bridge_state = BridgeStates.Started
+				self.current_mouse_state = MouseStates.Bridge
 			end
-		elseif self.current_bridge_state == BridgeStates.Started then
+		elseif self.current_mouse_state == MouseStates.Bridge then
 			local deselect = hit == nil
 			if is_bridge_allowed(self, hit, pos) then
 				hit:lock()
@@ -240,7 +261,11 @@ function class.new()
 			if deselect then
 				self.bridge_start = nil
 				self.bridge_island = nil
-				self.current_bridge_state = BridgeStates.Idle
+				self.current_mouse_state = MouseStates.Idle
+			end
+		elseif self.current_mouse_state == MouseStates.Building then
+			if hit ~= nil and hit:is_locked() then
+				hit:try_build(self.building_type, pos)
 			end
 		end
 	end
