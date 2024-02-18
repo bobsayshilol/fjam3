@@ -23,10 +23,12 @@ class.Shapes = {
             { x = 2, y = 2 },
         },
         physics = {
-            0 * TileSize, 0 * TileSize,
-            3 * TileSize, 0 * TileSize,
-            3 * TileSize, 3 * TileSize,
-            0 * TileSize, 3 * TileSize,
+            {
+                0 * TileSize, 0 * TileSize,
+                3 * TileSize, 0 * TileSize,
+                3 * TileSize, 3 * TileSize,
+                0 * TileSize, 3 * TileSize,
+            }
         }
     },
     Basic = {
@@ -35,10 +37,12 @@ class.Shapes = {
             { x = 1, y = 0 },
         },
         physics = {
-            0 * TileSize, 0 * TileSize,
-            2 * TileSize, 0 * TileSize,
-            2 * TileSize, 1 * TileSize,
-            0 * TileSize, 1 * TileSize,
+            {
+                0 * TileSize, 0 * TileSize,
+                2 * TileSize, 0 * TileSize,
+                2 * TileSize, 1 * TileSize,
+                0 * TileSize, 1 * TileSize,
+            }
         }
     },
     Square = {
@@ -49,10 +53,12 @@ class.Shapes = {
             { x = 1, y = 1 },
         },
         physics = {
-            0 * TileSize, 0 * TileSize,
-            2 * TileSize, 0 * TileSize,
-            2 * TileSize, 2 * TileSize,
-            0 * TileSize, 2 * TileSize,
+            {
+                0 * TileSize, 0 * TileSize,
+                2 * TileSize, 0 * TileSize,
+                2 * TileSize, 2 * TileSize,
+                0 * TileSize, 2 * TileSize,
+            }
         }
     },
     Wide = {
@@ -63,10 +69,12 @@ class.Shapes = {
             { x = 3, y = 0 },
         },
         physics = {
-            0 * TileSize, 0 * TileSize,
-            4 * TileSize, 0 * TileSize,
-            4 * TileSize, 1 * TileSize,
-            0 * TileSize, 1 * TileSize,
+            {
+                0 * TileSize, 0 * TileSize,
+                4 * TileSize, 0 * TileSize,
+                4 * TileSize, 1 * TileSize,
+                0 * TileSize, 1 * TileSize,
+            }
         }
     },
     L = {
@@ -77,12 +85,18 @@ class.Shapes = {
             { x = 2, y = 1 },
         },
         physics = {
-            0 * TileSize, 0 * TileSize,
-            3 * TileSize, 0 * TileSize,
-            3 * TileSize, 2 * TileSize,
-            2 * TileSize, 2 * TileSize,
-            2 * TileSize, 1 * TileSize,
-            0 * TileSize, 1 * TileSize,
+            {
+                0 * TileSize, 0 * TileSize,
+                3 * TileSize, 0 * TileSize,
+                3 * TileSize, 1 * TileSize,
+                0 * TileSize, 1 * TileSize,
+            },
+            {
+                2 * TileSize, 1 * TileSize,
+                3 * TileSize, 1 * TileSize,
+                3 * TileSize, 2 * TileSize,
+                2 * TileSize, 2 * TileSize,
+            }
         }
     },
     T = {
@@ -94,14 +108,18 @@ class.Shapes = {
             { x = 1, y = 2 },
         },
         physics = {
-            0 * TileSize, 0 * TileSize,
-            3 * TileSize, 0 * TileSize,
-            3 * TileSize, 1 * TileSize,
-            2 * TileSize, 1 * TileSize,
-            2 * TileSize, 3 * TileSize,
-            1 * TileSize, 3 * TileSize,
-            1 * TileSize, 1 * TileSize,
-            0 * TileSize, 1 * TileSize,
+            {
+                0 * TileSize, 0 * TileSize,
+                3 * TileSize, 0 * TileSize,
+                3 * TileSize, 1 * TileSize,
+                0 * TileSize, 1 * TileSize,
+            },
+            {
+                1 * TileSize, 1 * TileSize,
+                2 * TileSize, 1 * TileSize,
+                2 * TileSize, 3 * TileSize,
+                1 * TileSize, 3 * TileSize,
+            }
         }
     },
 }
@@ -134,9 +152,15 @@ function class.new(x, y, world, start)
     -- Physics
     local create_phys = function(self)
         self.body = love.physics.newBody(world, self.position.x, self.position.y, self.locked and "static" or "dynamic")
-        local shape2d = love.physics.newPolygonShape(self.shape.physics)
-        self.fixture = love.physics.newFixture(self.body, shape2d)
-        self.fixture:setUserData(self)
+        self.fixtures = {}
+        for _, phys in pairs(self.shape.physics) do
+            assert(#phys <= 8)
+            assert(love.math.isConvex(phys))
+            local shape2d = love.physics.newPolygonShape(phys)
+            local fixture = love.physics.newFixture(self.body, shape2d)
+            fixture:setUserData(self)
+            table.insert(self.fixtures, fixture)
+        end
         self.body:setAngle(self.angle)
         self.body:setFixedRotation(self.locked)
     end
@@ -174,10 +198,12 @@ function class.new(x, y, world, start)
     state.draw = function(self, camera)
         if DRAW_DEBUG then
             love.graphics.setColor(1, 1, 1)
-            local x1, y1, x2, y2 = self.fixture:getBoundingBox()
-            local p1 = camera:to_screen({ x = x1, y = y1 })
-            local p2 = camera:to_screen({ x = x2, y = y2 })
-            love.graphics.polygon("line", p1.x, p1.y, p1.x, p2.y, p2.x, p2.y, p2.x, p1.y)
+            for _, fixture in pairs(self.fixtures) do
+                local x1, y1, x2, y2 = fixture:getBoundingBox()
+                local p1 = camera:to_screen({ x = x1, y = y1 })
+                local p2 = camera:to_screen({ x = x2, y = y2 })
+                love.graphics.polygon("line", p1.x, p1.y, p1.x, p2.y, p2.x, p2.y, p2.x, p1.y)
+            end
         end
 
         local tile_size = TileSize * camera.scale

@@ -122,6 +122,8 @@ function class.new()
 
 		-- Create the initial island
 		self.islands[1] = Island.new(0, 0, self.world, true)
+		local did_build = self.islands[1]:try_build(Building.Types.Base, { x = 0, y = 0 })
+		assert(did_build)
 		self.workers[1] = Worker.new(0, 0)
 
 		-- Spawn some floating ones

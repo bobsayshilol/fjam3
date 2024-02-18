@@ -7,26 +7,26 @@ class.Types = {
     Max = 3,
 }
 
-local fonts = {}
+local s_font
+local s_font_size = nil
 local function get_font(height)
     height = math.floor(height * 2) / 2
-    local font = fonts[height]
-    if font == nil then
-        font = love.graphics.newFont(height)
-        fonts[height] = font
+    if s_font_size ~= height then
+        s_font = love.graphics.newFont(height)
+        s_font_size = height
     end
-    return font
+    return s_font
 end
-local texts = {}
+local s_text
+local s_text_key = nil
 local function get_text(height, count)
     local key = height .. "_" .. count
-    local text = texts[key]
-    if text == nil then
+    if key ~= s_text_key then
         local font = get_font(height)
-        text = love.graphics.newText(font, count)
-        texts[key] = text
+        s_text = love.graphics.newText(font, count)
+        s_text_key = key
     end
-    return text
+    return s_text
 end
 
 
