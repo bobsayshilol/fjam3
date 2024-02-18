@@ -61,31 +61,60 @@ function class.new(root)
     end
 
     -- Breadth first search
-    local search_internal
-    search_internal = function(neighbours, prev, current, callback, path)
-        for island, info in pairs(neighbours[current]) do
-            if island ~= prev then
-                local matches =
-                    callback(island) or
-                    search_internal(neighbours, current, island, callback, path)
-                if matches then
-                    table.insert(path, island)
-                    return true
+    local build_list = function(neighbours, visited, current_visits)
+        local new_visits = {}
+        for current, path in pairs(current_visits) do
+            for island, info in pairs(neighbours[current]) do
+                if visited[island] == nil then
+                    visited[island] = true
+                    new_visits[island] = { prev = path, current = island }
                 end
             end
         end
-        return false
+        return new_visits
+    end
+    local search_internal = function(neighbours, start, callback)
+        local visited = {}
+        visited[start] = true
+
+        -- Build the initial list of places to look
+        local current_visits = build_list(neighbours, visited, { [start] = { prev = nil, current = start } })
+
+        while true do
+            -- Process the current list
+            local did_process = false
+            for island, path in pairs(current_visits) do
+                did_process = true
+                local matches = callback(island)
+                if matches then
+                    return true, path
+                end
+            end
+
+            if not did_process then
+                break
+            end
+
+            -- Build the next set of lists
+            current_visits = build_list(neighbours, visited, current_visits)
+        end
+
+        return false, nil
     end
 
     -- callback(island) -> matches
     state.search_for = function(self, from, callback)
-        local path = {}
-        local found = search_internal(self.neighbours, nil, from, callback, path)
+        local found, linked_path = search_internal(self.neighbours, from, callback)
         if not found then
             return nil
         end
-        -- Add the root and reverse the order
-        table.insert(path, from)
+        -- Squash it
+        local path = {}
+        while linked_path ~= nil do
+            table.insert(path, linked_path.current)
+            linked_path = linked_path.prev
+        end
+        -- Reverse the order
         local len = #path
         for i = 0, (len - 1) / 2 do
             local tmp = path[i + 1]
@@ -150,6 +179,8 @@ test(n1, asd)
 test(root, root)
 test(n2, right)
 test(n2, n1)
+
+love.event.quit()
 
 --]]
 
