@@ -35,22 +35,22 @@ function class.new(type, pos)
     elseif state.type == class.Types.Hut then
         state.colour = { 0.8, 0.8, 0.5 }
         state.missing = {
-            [Resource.Types.Rock] = { remain = 20, reserved = 0 },
-            [Resource.Types.Wood] = { remain = 30, reserved = 0 },
+            [Resource.Types.Rock] = { remain = 2, reserved = 0 },
+            [Resource.Types.Wood] = { remain = 3, reserved = 0 },
         }
     elseif state.type == class.Types.House then
         state.colour = { 1, 1, 1 }
         state.missing = {
-            [Resource.Types.Rock] = { remain = 50, reserved = 0 },
-            [Resource.Types.Wood] = { remain = 80, reserved = 0 },
-            [Resource.Types.Yellow] = { remain = 40, reserved = 0 },
+            [Resource.Types.Rock] = { remain = 5, reserved = 0 },
+            [Resource.Types.Wood] = { remain = 8, reserved = 0 },
+            [Resource.Types.Yellow] = { remain = 4, reserved = 0 },
         }
     elseif state.type == class.Types.Turret then
         state.colour = { 0, 1, 1 }
         state.missing = {
-            [Resource.Types.Rock] = { remain = 10, reserved = 0 },
-            [Resource.Types.Wood] = { remain = 10, reserved = 0 },
-            [Resource.Types.Yellow] = { remain = 50, reserved = 0 },
+            [Resource.Types.Rock] = { remain = 1, reserved = 0 },
+            [Resource.Types.Wood] = { remain = 1, reserved = 0 },
+            [Resource.Types.Yellow] = { remain = 5, reserved = 0 },
         }
     end
 

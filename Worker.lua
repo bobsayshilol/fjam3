@@ -2,7 +2,7 @@ local class = {}
 
 local IdleTime = 0.5
 local WanderTime = 2.5
-local MoveSpeed = 2
+local MoveSpeed = 5
 local WorkerSize = 1
 
 local function change_state(self, new)

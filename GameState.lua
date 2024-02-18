@@ -128,7 +128,10 @@ function class.new()
 		table.insert(self.islands, base)
 		local did_build = base:try_build(Building.Types.Base, { x = 0, y = 0 })
 		assert(did_build)
-		table.insert(self.workers, Worker.new(1, 1, base))
+		-- Add some workers to it
+		for i = 1, 5 do
+			table.insert(self.workers, Worker.new(1, 1, base))
+		end
 
 		-- Spawn some floating ones
 		for i = 1, 5 do
