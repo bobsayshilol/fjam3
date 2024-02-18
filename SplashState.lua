@@ -26,8 +26,7 @@ function class.new()
 	end
 
 	state.update = function(self, dt)
-		return "game"
-		--return state.next
+		return state.next
 	end
 
 	state.keypressed = function(self, key)
@@ -42,8 +41,9 @@ function class.new()
 
 	state.draw = function(self)
 		local sw, sh = love.graphics.getDimensions()
-		local ns = 10
-		local n2s = 20
+		local t = 2 * math.pi * love.timer.getTime()
+		local ns = 9 - 1 * math.sin(t)
+		local n2s = 25 + 4 * math.sin(t)
 		local bs = 4
 
 		local nw, nh = state.nameText:getDimensions()

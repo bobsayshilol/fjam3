@@ -1,7 +1,10 @@
 local class = {}
 
 local intro = {
-	"TODO: intro text",
+	"Your people are stranded on a floating island",
+	"Build bridges to gather resources",
+	"Be wary of monsters",
+	"Good luck!"
 }
 
 function class.load()

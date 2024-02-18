@@ -1,6 +1,13 @@
 local class = {}
 
+local MaxBridgeLength = 20
+class.MaxBridgeLength = MaxBridgeLength
+
 local BridgeWidth = 0.8
+
+local function vec_len(vec)
+    return math.sqrt(vec.x * vec.x + vec.y * vec.y)
+end
 
 class.draw = function(camera, pt1_s, pt2_s, allowed)
     if allowed then
@@ -9,11 +16,25 @@ class.draw = function(camera, pt1_s, pt2_s, allowed)
         love.graphics.setColor(0.8, 0, 0)
     end
 
-    local t = { x = -(pt2_s.y - pt1_s.y), y = pt2_s.x - pt1_s.x }
-    local l = math.sqrt(t.x * t.x + t.y * t.y)
-    if l < 0.1 then return end
-    t.x = t.x / l
-    t.y = t.y / l
+    local delta = { x = pt2_s.x - pt1_s.x, y = pt2_s.y - pt1_s.y }
+    local len = vec_len(delta)
+    if len == 0 then
+        return
+    end
+    delta.x = delta.x / len
+    delta.y = delta.y / len
+
+    -- If we're too big then don't draw it
+    local max_len = MaxBridgeLength * camera.scale
+    if len > max_len then
+        --assert(not allowed)
+        pt2_s = {
+            x = pt1_s.x + delta.x * max_len,
+            y = pt1_s.y + delta.y * max_len,
+        }
+    end
+
+    local t = { x = -delta.y, y = delta.x }
 
     local width = BridgeWidth * camera.scale
     love.graphics.polygon("fill",

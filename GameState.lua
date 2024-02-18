@@ -2,7 +2,6 @@ local class = {}
 
 local MoveSpeed = 30
 local IslandSpawnTime = 0.8
-local MaxBridgeLength = 20
 
 local Island
 local Worker
@@ -56,7 +55,7 @@ end
 local function is_bridge_allowed(self, hit, stop_w)
 	local valid_target = hit ~= nil and hit ~= self.bridge_island and not hit:is_locked()
 	local delta = { x = stop_w.x - self.bridge_start.x, y = stop_w.y - self.bridge_start.y }
-	local size_ok = vec_len2(delta) < MaxBridgeLength * MaxBridgeLength
+	local size_ok = vec_len2(delta) < Bridge.MaxBridgeLength * Bridge.MaxBridgeLength
 	return valid_target and size_ok
 end
 
