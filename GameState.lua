@@ -255,6 +255,8 @@ function class.new()
 		love.graphics.setColor(1, 1, 1)
 		love.graphics.print("Currently building: " .. Building.to_string(state.building_type), 10, 10)
 		love.graphics.print("Num workers: " .. #self.workers, 10, 25)
+		love.graphics.print("Use number keys to change build mode", 10, 40)
+		love.graphics.print("Gameplay is what you make of it", 10, 65)
 
 		-- TODO: UI for building things
 	end
@@ -351,7 +353,7 @@ function class.new()
 
 	state.wheelmoved = function(self, x, y)
 		-- Zoom
-		local speed = 0.4
+		local speed = 0.4 / 120 -- 120 for web build
 		local min = 8
 		local max = 15
 		local scale = self.camera.scale + y * speed
