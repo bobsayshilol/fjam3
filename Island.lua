@@ -240,6 +240,14 @@ function class.new(x, y, world, start)
         end
     end
 
+    state.world_pos = function(self, resource)
+        local transform = love.math.newTransform(0, 0, self.angle)
+        local wx, wy = transform:transformPoint((resource.pos.x + 0.5) * TileSize, (resource.pos.y + 0.5) * TileSize)
+        wx = wx + self.position.x
+        wy = wy + self.position.y
+        return { x = wx, y = wy }
+    end
+
     state.try_build = function(self, type, pos)
         -- Map into our space
         local transform = love.math.newTransform(0, 0, -self.angle)

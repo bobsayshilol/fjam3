@@ -60,6 +60,12 @@ function class.new(root)
         }
     end
 
+    state.bridge_info = function(self, island1, island2)
+        local info = self.neighbours[island1]
+        if info == nil then return nil end
+        return info[island2]
+    end
+
     -- Breadth first search
     local build_list = function(neighbours, visited, current_visits)
         local new_visits = {}
@@ -104,6 +110,9 @@ function class.new(root)
 
     -- callback(island) -> matches
     state.search_for = function(self, from, callback, reverse)
+        if callback(from) then
+            return { from }
+        end
         local found, linked_path = search_internal(self.neighbours, from, callback)
         if not found then
             return nil

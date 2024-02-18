@@ -33,7 +33,7 @@ function class.new(type, pos)
         state.colour = { 0, 0, 1 }
         state.missing = {}
     elseif state.type == class.Types.Hut then
-        state.colour = { 0.8, 0.8, 0.8 }
+        state.colour = { 0.8, 0.8, 0.5 }
         state.missing = {
             [Resource.Types.Rock] = { remain = 20, reserved = 0 },
             [Resource.Types.Wood] = { remain = 30, reserved = 0 },

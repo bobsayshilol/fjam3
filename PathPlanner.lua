@@ -26,6 +26,25 @@ function class.try_plan(graph, building_island, building)
     return nil
 end
 
+local make_path = function(graph, islands)
+    assert(#islands >= 1)
+
+    local prev_island = islands[1]
+    table.remove(islands, 1)
+
+    local path = {}
+    for _, island in pairs(islands) do
+        -- Look for the bridges between this island the previous one
+        local info = graph:bridge_info(prev_island, island)
+        assert(info)
+        prev_island = island
+        -- Add the 2 points
+        table.insert(path, { x = info.pos1.x, y = info.pos1.y })
+        table.insert(path, { x = info.pos2.x, y = info.pos2.y })
+    end
+    return path
+end
+
 function class.build(graph, plan, src_island, dst_island, building)
     -- Find a path from src to resource
     local resource_island = plan.resource_to_building[1]
@@ -34,27 +53,23 @@ function class.build(graph, plan, src_island, dst_island, building)
     end
     local src_to_resource = graph:search_for(src_island, is_resource)
     assert(src_to_resource)
+    local resource = resource_island.resource
 
     -- Build the paths
-    -- TODO: proper traversal
-    local to_res = {}
-    for _, island in pairs(src_to_resource) do
-        table.insert(to_res, { x = island.position.x, y = island.position.y })
-    end
-    local to_dst = {}
-    for _, island in pairs(plan.resource_to_building) do
-        table.insert(to_dst, { x = island.position.x, y = island.position.y })
-    end
+    local to_res = make_path(graph, src_to_resource)
+    table.insert(to_res, resource_island:world_pos(resource))
+    local to_dst = make_path(graph, plan.resource_to_building)
+    table.insert(to_dst, dst_island:world_pos(building))
 
     -- Reserve space for what we'll take
-    local count = resource_island.resource:try_reserve(plan.count)
+    local count = resource:try_reserve(plan.count)
     assert(count == plan.count)
-    local type = resource_island.resource.type
+    local type = resource.type
     building:setup_request(type, count)
 
     return {
         to_res = to_res,
-        resource = resource_island.resource,
+        resource = resource,
         type = type,
         count = count,
         to_dst = to_dst,

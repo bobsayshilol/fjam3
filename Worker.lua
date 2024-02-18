@@ -86,7 +86,7 @@ class.Action = {
             if self.plan_step == PlanSteps.Moving then
                 -- See if we're there
                 local dist = vec_len(vec_sub(self.plan_current_dest, self.position))
-                if dist < 1 then
+                if dist < 0.5 then
                     if #self.plan.to_res ~= 0 then
                         plan_move_to(self, self.plan.to_res)
                     elseif self.plan.resource ~= nil then
