@@ -68,8 +68,17 @@ function class.new(x, y, island)
         }
         -- Clamp to current island if we're not following a path
         if self.current_island ~= nil then
-            local corner = { x = new_pos.x + WorkerSize, y = new_pos.y + WorkerSize }
-            if self.current_island:hit_test(new_pos) and self.current_island:hit_test(corner) then
+            local can_move = true
+            -- TODO: this doesn't handle concave parts of T/L
+            for x = 0, 1 do
+                for y = 0, 1 do
+                    local corner = { x = new_pos.x + x * WorkerSize, y = new_pos.y + y * WorkerSize }
+                    if not self.current_island:hit_test(corner) then
+                        can_move = false
+                    end
+                end
+            end
+            if can_move then
                 self.position = new_pos
             end
         end

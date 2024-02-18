@@ -123,7 +123,7 @@ function class.new()
 		-- Create the initial island
 		local base = Island.new(0, 0, self.world, true)
 		table.insert(self.islands, base)
-		local did_build = base:try_build(Building.Types.Base, { x = 0, y = 0 })
+		local did_build, wx, wy = base:try_build(Building.Types.Base, { x = 0, y = 0 })
 		assert(did_build)
 		table.insert(self.workers, Worker.new(1, 1, base))
 
@@ -268,13 +268,11 @@ function class.new()
 			end
 		elseif self.current_mouse_state == MouseStates.Building then
 			if hit ~= nil and hit:is_locked() then
-				if hit:try_build(self.building_type, pos) then
+				local built, wx, wy = hit:try_build(self.building_type, pos)
+				if built then
 					if self.building_type == Building.Types.House then
 						-- Spawn a worker with each house
-						local ts = hit:tile_size()
-						local pos_x = math.floor(pos.x / ts) + ts / 2
-						local pos_y = math.floor(pos.y / ts) + ts / 2
-						table.insert(self.workers, Worker.new(pos_x, pos_y, hit))
+						table.insert(self.workers, Worker.new(wx, wy, hit))
 					end
 				end
 			end

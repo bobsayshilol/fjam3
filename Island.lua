@@ -265,7 +265,12 @@ function class.new(x, y, world, start)
         -- Build it
         local building = Building.new(type, pos)
         table.insert(self.buildings, building)
-        return true
+
+        -- Return the center of where it was built in world space
+        local wx, wy = transform:inverseTransformPoint((px + 0.5) * TileSize, (py + 0.5) * TileSize)
+        wx = wx + self.position.x
+        wy = wy + self.position.y
+        return true, wx, wy
     end
 
     state.tile_size = function(self)
