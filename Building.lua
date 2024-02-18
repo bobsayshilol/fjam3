@@ -14,11 +14,14 @@ class.to_string = function(type)
     if type == nil then
         -- HACK: used to mean bridges
         return "bridge"
+    elseif type == class.Types.Hut then
+        return "hut"
     elseif type == class.Types.House then
         return "house"
     elseif type == class.Types.Turret then
         return "turret"
     end
+    assert("forgot " .. type)
 end
 
 function class.new(type, pos)
@@ -29,7 +32,7 @@ function class.new(type, pos)
     if state.type == class.Types.Base then
         state.colour = { 0, 0, 1 }
         state.missing = {}
-    elseif state.type == class.Types.House then
+    elseif state.type == class.Types.Hut then
         state.colour = { 0.8, 0.8, 0.8 }
         state.missing = {
             [Resource.Types.Rock] = { remain = 20, reserved = 0 },

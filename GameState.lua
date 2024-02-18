@@ -259,8 +259,11 @@ function class.new()
 				state.building_type = nil
 			elseif key == "2" then
 				self.current_mouse_state = MouseStates.Building
-				self.building_type = Building.Types.House
+				self.building_type = Building.Types.Hut
 			elseif key == "3" then
+				self.current_mouse_state = MouseStates.Building
+				self.building_type = Building.Types.House
+			elseif key == "4" then
 				self.current_mouse_state = MouseStates.Building
 				self.building_type = Building.Types.Turret
 			end
@@ -304,6 +307,7 @@ function class.new()
 				if built then
 					if building.type == Building.Types.House then
 						-- Spawn a worker with each house
+						-- TODO: should be on completion
 						table.insert(self.workers, Worker.new(wx, wy, hit))
 					end
 					self.orders[building] = hit
