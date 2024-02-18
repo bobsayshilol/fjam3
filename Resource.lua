@@ -34,6 +34,7 @@ function class.new(type, count, rate, pos)
     local state = {}
     state.type = type
     state.count = count
+    state.reserved = 0
     --state.rate = rate
     state.pos = pos -- relative to island
 
@@ -62,6 +63,21 @@ function class.new(type, count, rate, pos)
         local text = get_text(size * 0.75, self.count)
         love.graphics.setColor(0, 0, 0)
         love.graphics.draw(text, tile_size * (self.pos.x + inset), tile_size * (self.pos.y + inset))
+    end
+
+    state.get_type = function(self)
+        return state.type
+    end
+
+    state.available = function(self)
+        return state.count - state.reserved
+    end
+
+    state.try_reserve = function(self, amount)
+        local avail = self:available()
+        amount = math.min(avail, amount)
+        state.reserved = state.reserved + amount
+        return amount
     end
 
     return state

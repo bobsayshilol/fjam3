@@ -267,7 +267,11 @@ function class.new()
 			end
 		elseif self.current_mouse_state == MouseStates.Building then
 			if hit ~= nil and hit:is_locked() then
-				hit:try_build(self.building_type, pos)
+				if hit:try_build(self.building_type, pos) then
+					if self.building_type == Building.Types.House then
+						table.insert(self.workers, Worker.new(pos.x, pos.y))
+					end
+				end
 			end
 		end
 	end
