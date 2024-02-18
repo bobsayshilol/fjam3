@@ -9,6 +9,7 @@ local Worker
 local Bridge
 local Building
 local IslandGraph
+local PathPlanner
 
 local function vec_len2(vec)
 	return vec.x * vec.x + vec.y * vec.y
@@ -73,6 +74,7 @@ function class.load()
 	Bridge = assert(require("Bridge"))
 	Building = assert(require("Building"))
 	IslandGraph = assert(require("IslandGraph"))
+	PathPlanner = assert(require("PathPlanner"))
 end
 
 function class.new()
@@ -81,6 +83,7 @@ function class.new()
 	state.bridges = {}
 	state.workers = {}
 	state.resources = {}
+	state.orders = {}
 	state.camera = {
 		pos_x = 0,
 		pos_y = 0,
@@ -123,7 +126,7 @@ function class.new()
 		-- Create the initial island
 		local base = Island.new(0, 0, self.world, true)
 		table.insert(self.islands, base)
-		local did_build, wx, wy = base:try_build(Building.Types.Base, { x = 0, y = 0 })
+		local did_build = base:try_build(Building.Types.Base, { x = 0, y = 0 })
 		assert(did_build)
 		table.insert(self.workers, Worker.new(1, 1, base))
 
@@ -160,6 +163,33 @@ function class.new()
 		-- Update worker logic
 		for _, worker in pairs(self.workers) do
 			worker:update(dt)
+		end
+
+		-- TODO: optimise this - we should be caching what resources need to go where, only rebuilding on bridge build
+		--
+		-- Remove any completed orders from the order list
+		local remove_buildings = {}
+		for building, island in pairs(self.orders) do
+			if not building:needs_resources() then
+				table.insert(remove_buildings, building)
+			end
+		end
+		for _, building in pairs(remove_buildings) do
+			self.orders[building] = nil
+		end
+		-- See if we can issue new orders
+		for building, island in pairs(self.orders) do
+			local plan = PathPlanner.try_plan(self.graph, island, building)
+			if plan ~= nil then
+				-- TODO: this will pick a random one rather than the most appropriate one, ah well
+				for _, worker in pairs(self.workers) do
+					if worker:can_take_order() then
+						local built_plan = PathPlanner.build(self.graph, plan, worker:island(), island, building)
+						worker:perform_plan(built_plan)
+						break
+					end
+				end
+			end
 		end
 
 		-- Check bridge validity
@@ -245,6 +275,7 @@ function class.new()
 
 		local pos = self.camera:from_screen({ x = x, y = y })
 		local hit = try_hit(self.world, pos)
+		local did_build = false
 
 		if self.current_mouse_state == MouseStates.Idle then
 			-- Must be locked (ie on the "main" land bit)
@@ -260,6 +291,7 @@ function class.new()
 				table.insert(self.bridges, Bridge.new(self.bridge_start, pos))
 				self.graph:add_bridge(self.bridge_island, self.bridge_start, hit, pos)
 				deselect = true
+				did_build = true
 			end
 			if deselect then
 				self.bridge_start = nil
@@ -268,14 +300,20 @@ function class.new()
 			end
 		elseif self.current_mouse_state == MouseStates.Building then
 			if hit ~= nil and hit:is_locked() then
-				local built, wx, wy = hit:try_build(self.building_type, pos)
+				local built, building, wx, wy = hit:try_build(self.building_type, pos)
 				if built then
-					if self.building_type == Building.Types.House then
+					if building.type == Building.Types.House then
 						-- Spawn a worker with each house
 						table.insert(self.workers, Worker.new(wx, wy, hit))
 					end
+					self.orders[building] = hit
+					did_build = true
 				end
 			end
+		end
+
+		if did_build then
+			-- TOOD: could trigger workers here
 		end
 	end
 

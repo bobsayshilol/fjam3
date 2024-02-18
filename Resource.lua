@@ -80,6 +80,14 @@ function class.new(type, count, rate, pos)
         return amount
     end
 
+    -- Must be reserved first
+    state.take = function(self, amount)
+        assert(state.reserved >= amount)
+        assert(state.count >= amount)
+        state.reserved = state.reserved - amount
+        state.count = state.count - amount
+    end
+
     return state
 end
 

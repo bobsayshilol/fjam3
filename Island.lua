@@ -270,7 +270,7 @@ function class.new(x, y, world, start)
         local wx, wy = transform:inverseTransformPoint((px + 0.5) * TileSize, (py + 0.5) * TileSize)
         wx = wx + self.position.x
         wy = wy + self.position.y
-        return true, wx, wy
+        return true, building, wx, wy
     end
 
     state.tile_size = function(self)

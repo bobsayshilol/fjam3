@@ -103,7 +103,7 @@ function class.new(root)
     end
 
     -- callback(island) -> matches
-    state.search_for = function(self, from, callback)
+    state.search_for = function(self, from, callback, reverse)
         local found, linked_path = search_internal(self.neighbours, from, callback)
         if not found then
             return nil
@@ -115,11 +115,13 @@ function class.new(root)
             linked_path = linked_path.prev
         end
         -- Reverse the order
-        local len = #path
-        for i = 0, (len - 1) / 2 do
-            local tmp = path[i + 1]
-            path[i + 1] = path[len - i]
-            path[len - i] = tmp
+        if not reverse then
+            local len = #path
+            for i = 0, (len - 1) / 2 do
+                local tmp = path[i + 1]
+                path[i + 1] = path[len - i]
+                path[len - i] = tmp
+            end
         end
         return path
     end

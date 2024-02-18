@@ -28,31 +28,84 @@ function class.new(type, pos)
 
     if state.type == class.Types.Base then
         state.colour = { 0, 0, 1 }
-        state.missing = nil
+        state.missing = {}
     elseif state.type == class.Types.House then
         state.colour = { 0.8, 0.8, 0.8 }
         state.missing = {
-            [Resource.Types.Rock] = 20,
-            [Resource.Types.Wood] = 30,
+            [Resource.Types.Rock] = { remain = 20, reserved = 0 },
+            [Resource.Types.Wood] = { remain = 30, reserved = 0 },
         }
     elseif state.type == class.Types.House then
         state.colour = { 1, 1, 1 }
         state.missing = {
-            [Resource.Types.Rock] = 50,
-            [Resource.Types.Wood] = 80,
-            [Resource.Types.Yellow] = 40,
+            [Resource.Types.Rock] = { remain = 50, reserved = 0 },
+            [Resource.Types.Wood] = { remain = 80, reserved = 0 },
+            [Resource.Types.Yellow] = { remain = 40, reserved = 0 },
         }
     elseif state.type == class.Types.Turret then
         state.colour = { 0, 1, 1 }
         state.missing = {
-            [Resource.Types.Rock] = 10,
-            [Resource.Types.Wood] = 10,
-            [Resource.Types.Yellow] = 50,
+            [Resource.Types.Rock] = { remain = 10, reserved = 0 },
+            [Resource.Types.Wood] = { remain = 10, reserved = 0 },
+            [Resource.Types.Yellow] = { remain = 50, reserved = 0 },
         }
     end
 
-    state.is_built = function()
-        return state.missing == nil
+    state.is_built = function(self)
+        if self.missing ~= nil then
+            for res, counts in pairs(self.missing) do
+                return false
+            end
+        end
+        return true
+    end
+
+    state.needs_resources = function(self)
+        if self.missing ~= nil then
+            for res, counts in pairs(self.missing) do
+                local needed = counts.remain - counts.reserved
+                if needed > 0 then
+                    return true
+                end
+            end
+        end
+        return false
+    end
+
+    state.missing_resources = function(self)
+        local resources = {}
+        if self.missing ~= nil then
+            for res, counts in pairs(self.missing) do
+                local needed = counts.remain - counts.reserved
+                if needed > 0 then
+                    resources[res] = needed
+                end
+            end
+        end
+        return resources
+    end
+
+    state.setup_request = function(self, res, count)
+        -- Decrement count
+        local info = self.missing[res]
+        assert(info ~= nil)
+        assert(info.remain >= info.reserved + count)
+        info.reserved = info.reserved + count
+    end
+
+    state.fill_request = function(self, res, count)
+        -- Decrement count
+        local info = self.missing[res]
+        assert(info ~= nil)
+        assert(info.remain >= count)
+        assert(info.reserved >= count)
+        info.remain = info.remain - count
+        info.reserved = info.reserved - count
+
+        -- Remove it if it's been fulfilled
+        if info.remain == 0 then
+            self.missing[res] = nil
+        end
     end
 
     state.update = function(self, dt)
