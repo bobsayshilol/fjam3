@@ -83,6 +83,8 @@ function class.new()
 	state.workers = {}
 	state.resources = {}
 	state.orders = {}
+	state.turrets = {}
+	state.monsters = {}
 	state.camera = {
 		pos_x = 0,
 		pos_y = 0,
@@ -167,18 +169,37 @@ function class.new()
 			worker:update(dt)
 		end
 
-		-- TODO: optimise this - we should be caching what resources need to go where, only rebuilding on bridge build
-		--
+		-- Update turrets logic
+		for _, turret in pairs(self.turrets) do
+			--turret:update(dt)
+		end
+
 		-- Remove any completed orders from the order list
 		local remove_buildings = {}
 		for building, island in pairs(self.orders) do
 			if not building:needs_resources() then
 				table.insert(remove_buildings, building)
+				-- Trigger any on-built stuff
+				local pos = island:world_pos(building)
+				if building.type == Building.Types.Hut then
+					-- Spawn a worker with each hut
+					table.insert(self.workers, Worker.new(pos.x, pos.y, island))
+				elseif building.type == Building.Types.House then
+					-- Spawn 4 workers for each house
+					for _ = 1, 4 do
+						table.insert(self.workers, Worker.new(pos.x, pos.y, island))
+					end
+				elseif building.type == Building.Types.Turret then
+					table.insert(self.turrets, building)
+				end
 			end
 		end
 		for _, building in pairs(remove_buildings) do
 			self.orders[building] = nil
 		end
+
+		-- TODO: optimise this - we should be caching what resources need to go where, only rebuilding on bridge build
+		--
 		-- See if we can issue new orders
 		for building, island in pairs(self.orders) do
 			local plan = PathPlanner.try_plan(self.graph, island, building)
@@ -232,7 +253,8 @@ function class.new()
 
 		-- TODO: stats
 		love.graphics.setColor(1, 1, 1)
-		love.graphics.print("Current mode: " .. Building.to_string(state.building_type), 10, 10)
+		love.graphics.print("Currently building: " .. Building.to_string(state.building_type), 10, 10)
+		love.graphics.print("Num workers: " .. #self.workers, 10, 25)
 
 		-- TODO: UI for building things
 	end
@@ -307,11 +329,6 @@ function class.new()
 			if hit ~= nil and hit:is_locked() then
 				local built, building, wx, wy = hit:try_build(self.building_type, pos)
 				if built then
-					if building.type == Building.Types.House then
-						-- Spawn a worker with each house
-						-- TODO: should be on completion
-						table.insert(self.workers, Worker.new(wx, wy, hit))
-					end
 					self.orders[building] = hit
 					did_build = true
 				end
