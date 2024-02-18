@@ -29,11 +29,10 @@ class.Action = {
     Wander = {
         enter = function(self)
             self.idle_timer = WanderTime
-            local vx = love.math.random() - 0.5
-            local sy = (love.math.random() > 0.5) and -1 or 1
+            local angle = love.math.random() * 2 * math.pi
             self.move_direction = {
-                x = vx,
-                y = sy * math.sqrt(1 - vx * vx)
+                x = math.cos(angle),
+                y = math.sin(angle)
             }
         end,
         update = function(self, dt)
@@ -50,11 +49,12 @@ class.Action = {
     },
 }
 
-function class.new(x, y)
+function class.new(x, y, island)
     local state = {}
     state.position = { x = x, y = y } -- world space
     state.action = class.Action.Idle
 
+    state.current_island = island
     state.idle_timer = 0 -- should trigger a state change immediately
     state.move_direction = { x = 0, y = 0 }
     state.holding_type = nil
@@ -62,12 +62,17 @@ function class.new(x, y)
 
     state.update = function(self, dt)
         -- Movement
-        self.position = {
+        local new_pos = {
             x = self.position.x + self.move_direction.x * MoveSpeed * dt,
             y = self.position.y + self.move_direction.y * MoveSpeed * dt
         }
-
-        -- TODO: Clamp to current island
+        -- Clamp to current island if we're not following a path
+        if self.current_island ~= nil then
+            local corner = { x = new_pos.x + WorkerSize, y = new_pos.y + WorkerSize }
+            if self.current_island:hit_test(new_pos) and self.current_island:hit_test(corner) then
+                self.position = new_pos
+            end
+        end
 
         self.action.update(self, dt)
     end

@@ -268,6 +268,19 @@ function class.new(x, y, world, start)
         return true
     end
 
+    state.tile_size = function(self)
+        return TileSize
+    end
+
+    state.hit_test = function(self, pt)
+        for _, fixture in pairs(self.fixtures) do
+            if fixture:testPoint(pt.x, pt.y) then
+                return true
+            end
+        end
+        return false
+    end
+
     return state
 end
 

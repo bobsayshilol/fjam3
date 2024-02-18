@@ -121,10 +121,11 @@ function class.new()
 		self.camera.pos_y = -center.y
 
 		-- Create the initial island
-		self.islands[1] = Island.new(0, 0, self.world, true)
-		local did_build = self.islands[1]:try_build(Building.Types.Base, { x = 0, y = 0 })
+		local base = Island.new(0, 0, self.world, true)
+		table.insert(self.islands, base)
+		local did_build = base:try_build(Building.Types.Base, { x = 0, y = 0 })
 		assert(did_build)
-		self.workers[1] = Worker.new(0, 0)
+		table.insert(self.workers, Worker.new(1, 1, base))
 
 		-- Spawn some floating ones
 		for i = 1, 5 do
@@ -269,7 +270,11 @@ function class.new()
 			if hit ~= nil and hit:is_locked() then
 				if hit:try_build(self.building_type, pos) then
 					if self.building_type == Building.Types.House then
-						table.insert(self.workers, Worker.new(pos.x, pos.y))
+						-- Spawn a worker with each house
+						local ts = hit:tile_size()
+						local pos_x = math.floor(pos.x / ts) + ts / 2
+						local pos_y = math.floor(pos.y / ts) + ts / 2
+						table.insert(self.workers, Worker.new(pos_x, pos_y, hit))
 					end
 				end
 			end
